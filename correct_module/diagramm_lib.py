@@ -2,7 +2,7 @@ import numpy as np
 import os
 from enum import Enum
 import pandas as pd
-
+from copy import deepcopy
 
 class ExperimentType(str, Enum):
     COMPRESSION = 'c'
@@ -151,11 +151,11 @@ class Diagramm:
     
     @property
     def as_dict(self) -> dict:
-        rez = self.__dict__
-        rez['_t'] = self._t.tolist()
-        rez['_e'] = self._e.tolist()
-        rez['_s'] = self._s.tolist()
-        rez['_de'] = self._de.tolist()
+        rez = deepcopy(self.__dict__)
+        rez['_t'] = list(self._t)
+        rez['_e'] = list(self._e)
+        rez['_s'] = list(self._s)
+        rez['_de'] = list(self._de)
         return rez
         
     
