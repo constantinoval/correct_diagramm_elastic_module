@@ -19,7 +19,7 @@ xls_data = None
 working_dir = os.path.curdir
 
 dpg.create_context()
-dpg.create_viewport(height=820)
+dpg.create_viewport(height=880, title='Elastic modulus correction')
 dpg.setup_dearpygui()
 
 # with dpg.theme() as choosen_button:
@@ -27,17 +27,12 @@ dpg.setup_dearpygui()
 #         dpg.add_theme_color(dpg.mvThemeCol_Button, (91, 164, 169))
 
 with dpg.theme() as global_theme:
-    #     # with dpg.theme_component(dpg.mvAll):
-    #     #     dpg.add_theme_style(dpg.mvStyleVar_FrameBorderSize, 1)
-    #     #     dpg.add_theme_style(dpg.mvStyleVar_FramePadding, y=10)
-    #     #     dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, y=10)
+    with dpg.theme_component(dpg.mvMenuItem):
+        dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, y=10)
     with dpg.theme_component(dpg.mvLineSeries):
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, 2, category=dpg.mvThemeCat_Plots)
 #
 dpg.bind_theme(global_theme)
-
-# def choose_xls(sender, app_data, user_data):
-#     dpg.bind_item_theme(sender, choosen_button)
 
 with dpg.font_registry():
     with dpg.font("c:/Windows/Fonts/arial.ttf", 16, default_font=True) as default_font:
@@ -172,6 +167,8 @@ def update_group_plot(sender, app_data, user_data):
 
 
 def load_xls(file_path):
+    if file_path is None:
+        return
     global xls_path
     global xls_data
     global working_dir
@@ -194,6 +191,8 @@ def choose_xls_file(sender, app_data, user_data):
 
 
 def set_working_dir(dir_path):
+    if dir_path is None:
+        return
     global working_dir
     working_dir = dir_path
 
@@ -226,9 +225,9 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
         stress_level_text = dpg.add_text('')
 
     with dpg.group(horizontal=True):
-        dpg.add_slider_float(vertical=True, width=10, format='', height=300, min_value=-100, max_value=100)
+        dpg.add_slider_float(vertical=True, width=10, format='', height=400, min_value=-100, max_value=100)
         dpg.add_spacer(width=5)
-        with dpg.subplots(1, 2, width=-1):
+        with dpg.subplots(1, 2, width=-1, height=400):
             with dpg.plot():
                 x1 = dpg.add_plot_axis(dpg.mvXAxis, label='strain')
                 y1 = dpg.add_plot_axis(dpg.mvYAxis, label='stress, MPa')
