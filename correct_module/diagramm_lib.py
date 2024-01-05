@@ -16,6 +16,7 @@ class Diagramm:
         self._s: np.ndarray = np.array(s, dtype=np.float32)
         self._de: np.ndarray = np.array(de, dtype=np.float32)
         self.etype = etype
+        self.ds: float = 0
         self.set_initial_values()
     
     def set_initial_values(self):
@@ -106,7 +107,7 @@ class Diagramm:
     
     @property
     def s(self) -> np.ndarray:
-        return self._s
+        return self._s + self.ds
     
     @property
     def ep_eng(self) -> np.ndarray:
@@ -124,7 +125,7 @@ class Diagramm:
             return np.array([])
         if self.ep2_idx == -1:
             return np.array([])
-        return self._s[self.ep1_idx:self.ep2_idx]
+        return self.s[self.ep1_idx:self.ep2_idx]
 
     @property
     def dep_eng(self) -> np.ndarray:
@@ -132,7 +133,7 @@ class Diagramm:
             return np.array([])
         if self.ep2_idx == -1:
             return np.array([])
-        return self._s[self.ep1_idx:self.ep2_idx]
+        return self.s[self.ep1_idx:self.ep2_idx]
 
     @property
     def ep_true(self) -> np.ndarray:

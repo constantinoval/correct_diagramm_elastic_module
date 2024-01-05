@@ -46,6 +46,7 @@ def choose_sheet(sender, app_data, user_data):
     global xls_path
     if xls_data is None:
         return
+    dpg.set_value(ds_slider, 0.0)
     diagramm.load_from_xls(xls_path, app_data)
     dpg.set_value(corrected_diag, [[], []])
     dpg.set_value(plastic_diag_eng, [[], []])
@@ -107,7 +108,7 @@ def correct_elastic(sender, app_data, user_data):
         corrected_diag,
         [
             list(diagramm.e),
-            list(diagramm._s),
+            list(diagramm.s),
         ]
     )
 
@@ -118,7 +119,7 @@ def shift_curves(sendedr, app_data, user_data):
         corrected_diag,
         [
             list(diagramm.e),
-            list(diagramm._s),
+            list(diagramm.s),
         ]
     )
     dpg.fit_axis_data(x1)
@@ -205,6 +206,19 @@ def set_working_dir_callback(sender, app_data, user_data):
     )
     fd.show()
 
+def change_ds_callback(sender, app_data, user_data):
+    global diagramm
+    if diagramm is None:
+        return
+    diagramm.ds = app_data
+    dpg.set_value(
+        corrected_diag,
+        [
+            list(diagramm.e),
+            list(diagramm.s),
+        ]
+    )
+
 
 with dpg.window(label="Correct module", width=800, height=700, tag='main'):
     with dpg.menu_bar():
@@ -225,7 +239,8 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
         stress_level_text = dpg.add_text('')
 
     with dpg.group(horizontal=True):
-        dpg.add_slider_float(vertical=True, width=10, format='', height=400, min_value=-100, max_value=100)
+        ds_slider = dpg.add_slider_float(vertical=True, width=10, format='', height=400, min_value=-100, max_value=100,
+                             callback=change_ds_callback)
         dpg.add_spacer(width=5)
         with dpg.subplots(1, 2, width=-1, height=400):
             with dpg.plot():
