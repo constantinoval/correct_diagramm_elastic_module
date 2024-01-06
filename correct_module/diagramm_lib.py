@@ -3,6 +3,7 @@ import os
 from enum import Enum
 import pandas as pd
 from copy import deepcopy
+import json
 
 class ExperimentType(str, Enum):
     COMPRESSION = 'c'
@@ -76,7 +77,7 @@ class Diagramm:
     @ep1.setter
     def ep1(self, value: float):
         self._ep1 = value
-        for i, e in enumerate(self._e+self._delta_e):
+        for i, e in enumerate(self._e):
             if e >= self._ep1:
                 break
         else:
@@ -87,7 +88,7 @@ class Diagramm:
     @ep2.setter
     def ep2(self, value: float):
         self._ep2 = value
-        for i, e in enumerate(self._e+self._delta_e):
+        for i, e in enumerate(self._e):
             if e >= self._ep2:
                 break
         else:
@@ -158,17 +159,29 @@ class Diagramm:
         rez['_s'] = list(self._s)
         rez['_de'] = list(self._de)
         return rez
+
+    def load_from_json(self, json_path: str):
+        if not os.path.exists(json_path):
+            return
+        data = json.load(open(json_path, 'r'))
+        self._t = np.array(data['_t'])
+        self._e = np.array(data['_e'])
+        self._s = np.array(data['_s'])
+        self._de = np.array(data['_de'])
+        self._E_multiplier = data['_E_multiplier']
+        self._delta_e = data['_delta_e']
+        self.ep1 = data['_ep1']
+        self.ep2 = data['_ep2']
+        self.exp_code = data['exp_code']
+        self.ds = data.get('ds', 0)
         
     
 if __name__=='__main__':
-    pass
-    import matplotlib.pylab as plt
+    # import matplotlib.pylab as plt
     d = Diagramm()
-    d.load_from_txt('./diagr.txt')
-    d._delta_e = 0.0
-    d.ep1 = 0.025
-    d.ep2 = 0.1648
-    print(d.__dict__)
+    d.load_from_json('../c713-01.json')
+    print(d._ep1_idx)
+    print(d._ep2_idx)
     # plt.plot(d._e, d._s)
     # plt.axvline(d._ep1, color='k')
     # plt.axvline(d._ep2, color='k')

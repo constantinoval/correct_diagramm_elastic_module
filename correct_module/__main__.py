@@ -19,7 +19,7 @@ xls_data = None
 working_dir = os.path.curdir
 
 dpg.create_context()
-dpg.create_viewport(height=880, title='Elastic modulus correction')
+dpg.create_viewport(height=900, title='Elastic modulus correction')
 dpg.setup_dearpygui()
 
 # with dpg.theme() as choosen_button:
@@ -149,22 +149,18 @@ def update_group_plot(sender, app_data, user_data):
     dpg.delete_item(yg2, children_only=True)
     dpg.delete_item(yg3, children_only=True)
     for f in glob(os.path.join(working_dir, '*.json')):
-        data = json.load(open(f, 'r'))
-        dgr = Diagramm(t=data['_t'], e=data['_e'], s=data['_s'], de=data['_de'])
-        dgr._E_multiplier = data['_E_multiplier']
-        dgr._delta_e = data['_delta_e']
-        dgr.ep1 = data['_ep1']
-        dgr.ep2 = data['_ep2']
-        dgr.exp_code = data['exp_code']
+        dgr = Diagramm()
+        dgr.load_from_json(f)
         dpg.add_line_series(dgr.e.tolist(), dgr.s.tolist(), label=dgr.exp_code, parent=yg1)
         dpg.add_line_series(dgr.ep_eng.tolist(), dgr.sp_eng.tolist(), label=dgr.exp_code, parent=yg2)
         dpg.add_line_series(dgr.ep_true.tolist(), dgr.sp_true.tolist(), label=dgr.exp_code, parent=yg3)
-    dpg.fit_axis_data(xg1)
-    dpg.fit_axis_data(yg1)
-    dpg.fit_axis_data(xg2)
-    dpg.fit_axis_data(yg2)
-    dpg.fit_axis_data(xg3)
-    dpg.fit_axis_data(yg3)
+    if dpg.get_value(autoscale_diags):
+        dpg.fit_axis_data(xg1)
+        dpg.fit_axis_data(yg1)
+        dpg.fit_axis_data(xg2)
+        dpg.fit_axis_data(yg2)
+        dpg.fit_axis_data(xg3)
+        dpg.fit_axis_data(yg3)
 
 
 def load_xls(file_path):
@@ -334,6 +330,7 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
             xg3 = dpg.add_plot_axis(dpg.mvXAxis, label='ep true')
             yg3 = dpg.add_plot_axis(dpg.mvYAxis, label='stress true')
             dpg.add_plot_legend()
+    autoscale_diags = dpg.add_checkbox(label='Автомасштабирование', default_value=True)
 
 # dpg.show_style_editor()
 
