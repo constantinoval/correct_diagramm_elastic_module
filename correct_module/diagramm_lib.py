@@ -11,13 +11,15 @@ class ExperimentType(str, Enum):
 
 
 class Diagramm:
-    def __init__(self, t=[], e=[], s=[], de=[], etype=ExperimentType.COMPRESSION):
+    def __init__(self, t=[], e=[], s=[], de=[], etype=ExperimentType.COMPRESSION,
+                 T=20):
         self._t: np.ndarray = np.array(t, dtype=np.float32)
         self._e: np.ndarray = np.array(e, dtype=np.float32)
         self._s: np.ndarray = np.array(s, dtype=np.float32)
         self._de: np.ndarray = np.array(de, dtype=np.float32)
         self.etype = etype
         self.ds: float = 0
+        self.T = T
         self.set_initial_values()
     
     def set_initial_values(self):
@@ -57,6 +59,7 @@ class Diagramm:
         self._s = data.s.to_numpy()
         self._de = data.de.to_numpy()
         self.exp_code = sheet_name
+        self.etype = sheet_name[0]
 
     @property
     def ep1(self) -> float:
@@ -174,14 +177,25 @@ class Diagramm:
         self.ep2 = data['_ep2']
         self.exp_code = data['exp_code']
         self.ds = data.get('ds', 0)
+        self.T = data.get('T', 20)
+
+    @property
+    def mean_de_eng(self) -> float:
+        return self.dep_eng.mean()
+
+    @property
+    def mean_de_true(self) -> float:
+        return self.dep_true.mean()
         
     
 if __name__=='__main__':
     # import matplotlib.pylab as plt
     d = Diagramm()
-    d.load_from_json('../c713-01.json')
+    d.load_from_json('../example/c714-01.json')
     print(d._ep1_idx)
     print(d._ep2_idx)
+    print(d.mean_de_eng)
+    print(d.mean_de_true)
     # plt.plot(d._e, d._s)
     # plt.axvline(d._ep1, color='k')
     # plt.axvline(d._ep2, color='k')

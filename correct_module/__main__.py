@@ -7,6 +7,19 @@ import json
 import sys
 from glob import glob
 from dpgfiledialog import dpgDirFileDialog
+from dataclasses import dataclass
+
+
+@dataclass
+class ExperimentTableRow:
+    code: str
+    diag: Diagramm
+    line_series_full_diag: int
+    line_series_plastic_diag: int
+    group: int = -1
+
+
+experiments: dict[str, ExperimentTableRow] = {}
 
 # if len(sys.argv) >= 2:
 #     xls_path = sys.argv[1]
@@ -144,23 +157,50 @@ def save_callback(sender, app_data, user_data):
     )
 
 
+def show_hide_diagramm(sender: int, app_data: bool, user_data: ExperimentTableRow):
+    dpg.configure_item(user_data.line_series_full_diag, show=app_data)
+    dpg.configure_item(user_data.line_series_plastic_diag, show=app_data)
+
+
 def update_group_plot(sender, app_data, user_data):
-    dpg.delete_item(yg1, children_only=True)
-    dpg.delete_item(yg2, children_only=True)
-    dpg.delete_item(yg3, children_only=True)
+    global experiments
+    # dpg.delete_item(yg1, children_only=True)
+    # dpg.delete_item(yg2, children_only=True)
+    # dpg.delete_item(yg3, children_only=True)
     for f in glob(os.path.join(working_dir, '*.json')):
+        exp_code = os.path.basename(f)[:-5]
         dgr = Diagramm()
         dgr.load_from_json(f)
-        dpg.add_line_series(dgr.e.tolist(), dgr.s.tolist(), label=dgr.exp_code, parent=yg1)
-        dpg.add_line_series(dgr.ep_eng.tolist(), dgr.sp_eng.tolist(), label=dgr.exp_code, parent=yg2)
-        dpg.add_line_series(dgr.ep_true.tolist(), dgr.sp_true.tolist(), label=dgr.exp_code, parent=yg3)
+        if exp_code in experiments:
+            exp = experiments[exp_code]
+            exp.diag = dgr
+            dpg.set_value(
+                exp.line_series_full_diag,
+                [dgr.e.tolist(), dgr.s.tolist()]
+                )
+            dpg.set_value(
+                exp.line_series_plastic_diag,
+                [dgr.ep_eng.tolist(), dgr.sp_eng.tolist()]
+                )
+        else:
+            fd = dpg.add_line_series(dgr.e.tolist(), dgr.s.tolist(), label=dgr.exp_code, parent=yg1)
+            pd = dpg.add_line_series(dgr.ep_eng.tolist(), dgr.sp_eng.tolist(), label=dgr.exp_code, parent=yg2)
+            experiments[exp_code] = ExperimentTableRow(code=exp_code, diag=dgr,
+                                                    line_series_full_diag=fd, line_series_plastic_diag=pd)
+            with dpg.table_row(parent=experiments_table):
+                dpg.add_text(exp_code)
+                dpg.add_text(f'{dgr.T}')
+                dpg.add_text(f'{dgr.mean_de_true:.0f}')
+                dpg.add_checkbox(default_value=True, user_data=experiments[exp_code],
+                                callback=show_hide_diagramm)
+        # dpg.add_line_series(dgr.ep_true.tolist(), dgr.sp_true.tolist(), label=dgr.exp_code, parent=yg3)
     if dpg.get_value(autoscale_diags):
         dpg.fit_axis_data(xg1)
         dpg.fit_axis_data(yg1)
         dpg.fit_axis_data(xg2)
         dpg.fit_axis_data(yg2)
-        dpg.fit_axis_data(xg3)
-        dpg.fit_axis_data(yg3)
+        # dpg.fit_axis_data(xg3)
+        # dpg.fit_axis_data(yg3)
 
 
 def load_xls(file_path):
@@ -202,6 +242,7 @@ def set_working_dir_callback(sender, app_data, user_data):
     )
     fd.show()
 
+
 def change_ds_callback(sender, app_data, user_data):
     global diagramm
     if diagramm is None:
@@ -230,13 +271,14 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
             callback=choose_sheet,
             width=300,
         )
+        dpg.add_button(label='Обновить', callback=lambda s, a, u: load_xls(xls_path))
         dpg.add_spacer(width=100)
         dpg.add_text('Уровень напряжения: ')
         stress_level_text = dpg.add_text('')
 
     with dpg.group(horizontal=True):
         ds_slider = dpg.add_slider_float(vertical=True, width=10, format='', height=400, min_value=-100, max_value=100,
-                             callback=change_ds_callback)
+                                         callback=change_ds_callback)
         dpg.add_spacer(width=5)
         with dpg.subplots(1, 2, width=-1, height=400):
             with dpg.plot():
@@ -293,7 +335,7 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
             elastic_multiplier = dpg.add_drag_float(
                 # label='correct_E',
                 min_value=0.001,
-                max_value=1,
+                max_value=2,
                 default_value=1,
                 speed=0.01,
                 callback=correct_elastic,
@@ -317,19 +359,25 @@ with dpg.window(label="Correct module", width=800, height=700, tag='main'):
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save', width=60, height=30, callback=save_callback)
         dpg.add_button(label='Update', width=60, height=30, callback=update_group_plot)
-    with dpg.subplots(1, 3, width=-1):
-        with dpg.plot():
-            xg1 = dpg.add_plot_axis(dpg.mvXAxis, label='strain')
-            yg1 = dpg.add_plot_axis(dpg.mvYAxis, label='stress')
-            dpg.add_plot_legend()
-        with dpg.plot():
-            xg2 = dpg.add_plot_axis(dpg.mvXAxis, label='ep eng')
-            yg2 = dpg.add_plot_axis(dpg.mvYAxis, label='stress eng')
-            dpg.add_plot_legend()
-        with dpg.plot():
-            xg3 = dpg.add_plot_axis(dpg.mvXAxis, label='ep true')
-            yg3 = dpg.add_plot_axis(dpg.mvYAxis, label='stress true')
-            dpg.add_plot_legend()
+    with dpg.group(horizontal=True):
+        with dpg.subplots(1, 2, width=800, height=300):
+            with dpg.plot():
+                xg1 = dpg.add_plot_axis(dpg.mvXAxis, label='strain')
+                yg1 = dpg.add_plot_axis(dpg.mvYAxis, label='stress')
+                dpg.add_plot_legend(outside=True)
+            with dpg.plot():
+                xg2 = dpg.add_plot_axis(dpg.mvXAxis, label='ep eng')
+                yg2 = dpg.add_plot_axis(dpg.mvYAxis, label='stress eng')
+                # dpg.add_plot_legend()
+            # with dpg.plot():
+            #     xg3 = dpg.add_plot_axis(dpg.mvXAxis, label='ep true')
+            #     yg3 = dpg.add_plot_axis(dpg.mvYAxis, label='stress true')
+            #     dpg.add_plot_legend()
+        with dpg.table(scrollY=True, height=300) as experiments_table:
+            dpg.add_table_column(label='Код')
+            dpg.add_table_column(label='темпер.')
+            dpg.add_table_column(label='скор. деф.')
+            dpg.add_table_column(label='отобр.')
     autoscale_diags = dpg.add_checkbox(label='Автомасштабирование', default_value=True)
 
 # dpg.show_style_editor()
